@@ -13,6 +13,8 @@ class SocketHandler {
             socket.on("join", this.onJoin.bind(this, socket));
             socket.on("message", this.onMessage.bind(this, socket));
             socket.on("disconnect", this.onLeave.bind(this, socket));
+            socket.on("typeStart", this.onTypeStart.bind(this, socket));
+            socket.on("typeEnd", this.onTypeEnd.bind(this, socket));
         });
     }
     async onJoin(socket, data) {
@@ -50,12 +52,16 @@ class SocketHandler {
         if (data.to == "groupChat") {
             const user = this.getUserBySocketId(socket.id);
             socket.broadcast.emit("receiveMessage", {
+                ...data,
                 text: data.text,
                 sender: user.username,
             });
-            MessageController.store(data.text, user.username);
+            if (data.typing == undefined) {
+                MessageController.store(data.text, user.username);
+            }
         } else {
             socket.to(this.users[data.to]).emit("receiveMessage", {
+                ...data,
                 text: data.text,
                 from: this.getUserBySocketId(socket.id)._id,
             });
@@ -72,6 +78,14 @@ class SocketHandler {
         );
         socket.broadcast.emit("userLeft", userLeft[0]);
         this.users[userLeft[0]] = undefined;
+    }
+    onTypeStart(socket, data) {
+        console.log(data, "started typing");
+        this.onMessage(socket, { ...data, typing: true });
+    }
+    onTypeEnd(socket, data) {
+        console.log(data, "ended typing");
+        this.onMessage(socket, { ...data, typing: false });
     }
 }
 

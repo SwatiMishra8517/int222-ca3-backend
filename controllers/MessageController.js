@@ -7,6 +7,7 @@ MessageController.getAllMessages = () => {
 };
 
 MessageController.store = (message, from) => {
+    console.log("Storing message on behalf of", from);
     const newRecord = new Message({
         text: message,
         from,
